@@ -15,6 +15,7 @@ function ags_custom_rss_cron_schedule($schedules) {
 }
 add_filter('cron_schedules', 'ags_custom_rss_cron_schedule');
 
+
 function ags_schedule_rss_cron() {
     if (!wp_next_scheduled('ags_fetch_rss_posts')) {
         wp_schedule_event(time(), 'every_6_hours', 'ags_fetch_rss_posts');
@@ -31,16 +32,13 @@ register_deactivation_hook(__FILE__, 'ags_clear_rss_cron');
 function ags_fetch_rss_posts() {
     $feeds = [
         'https://theghostinmymachine.com/feed/',
-        'https://feeds.feedburner.com/ParanormalGlobe',
-        'https://www.yourghoststories.com/rss.php',
-        'https://www.realghoststoriesonline.com/feed/',
-        'https://www.thegravetalks.com/feed/',
-        'https://www.hauntedrooms.com/feed'
+	'https://feeds.feedburner.com/ParanormalGlobe',
+	'https://www.yourghoststories.com/rss.php',
+	'https://www.realghoststoriesonline.com/feed/',
+	'https://www.thegravetalks.com/feed/',
+	'https://www.hauntedrooms.com/feed'
         // Add more RSS feed URLs here
     ];
-
-    $max_posts = 10; // Limit total posts across all feeds
-    $post_count = 0;
 
     foreach ($feeds as $feed_url) {
         $rss = fetch_feed($feed_url);
@@ -50,8 +48,6 @@ function ags_fetch_rss_posts() {
             $rss_items = $rss->get_items(0, $max_items);
 
             foreach ($rss_items as $item) {
-                if ($post_count >= $max_posts) break;
-
                 $title = $item->get_title();
                 $content = $item->get_content();
                 $link = $item->get_permalink();
@@ -60,11 +56,10 @@ function ags_fetch_rss_posts() {
                     wp_insert_post([
                         'post_title'   => $title,
                         'post_content' => $content . "\n\nSource: " . $link,
-                        'post_status'  => 'post', // Set to draft for review before publishing
+                        'post_status'  => 'publish',
                         'post_author'  => 1, // Replace with desired author ID
                         'post_category' => [get_cat_ID('Ghost Stories')],
                     ]);
-                    $post_count++;
                 }
             }
         }
