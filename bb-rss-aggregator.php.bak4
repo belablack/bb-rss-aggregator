@@ -104,14 +104,14 @@ function ags_register_settings() {
 add_action('admin_init', 'ags_register_settings');
 
 function ags_register_options_page() {
-    add_options_page("Bela's RSS Aggregator Settings", "Bela's RSS Aggregator", 'manage_options', 'ags-options', 'ags_options_page');
+    add_options_page('RSS Aggregator Settings', 'RSS Aggregator', 'manage_options', 'ags-options', 'ags_options_page');
 }
 add_action('admin_menu', 'ags_register_options_page');
 
 function ags_options_page() {
     ?>
     <div>
-        <h2>Bela's RSS Aggregator Settings</h2>
+        <h2>RSS Aggregator Settings</h2>
         <form method="post" action="options.php">
             <?php settings_fields('ags_options_group'); ?>
             <table>
@@ -145,20 +145,6 @@ function ags_options_page() {
             </table>
             <?php submit_button(); ?>
         </form>
-        
-        <!-- Manual Trigger Button -->
-        <form method="post" action="">
-            <input type="hidden" name="ags_manual_trigger" value="1" />
-            <?php submit_button("Manually Run RSS Fetch"); ?>
-        </form>
-        
-        <?php
-            // Check for manual trigger
-            if (isset($_POST['ags_manual_trigger']) && $_POST['ags_manual_trigger'] == '1') {
-                ags_fetch_rss_posts();
-                echo "<p><strong>RSS fetch triggered manually.</strong></p>";
-            }
-        ?>
     </div>
     <?php
 }
