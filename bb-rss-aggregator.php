@@ -2,8 +2,10 @@
 /*
 Plugin Name: Bela Black's RSS Aggregator
 Description: Fetches and publishes story posts from various RSS feeds.
-Version: 1.0
+Version: 1.3.1
 Author: Bela Black
+License: GPLv2 or later
+License URI: https://www.gnu.org/licenses/gpl-2.0.html
 */
 
 function ags_custom_rss_cron_schedule($schedules) {
