@@ -1,0 +1,121 @@
+<?php
+/*
+Plugin Name: Bela Black's RSS Aggregator
+Description: Fetches and publishes story posts from various RSS feeds.
+Version: 1.0
+Author: Bela Black
+*/
+
+function ags_custom_rss_cron_schedule($schedules) {
+    $schedules['every_6_hours'] = [
+        'interval' => 21600, // 6 hours in seconds
+        'display'  => __('Every 6 Hours')
+    ];
+    return $schedules;
+}
+add_filter('cron_schedules', 'ags_custom_rss_cron_schedule');
+
+function ags_schedule_rss_cron() {
+    if (!wp_next_scheduled('ags_fetch_rss_posts')) {
+        wp_schedule_event(time(), 'every_6_hours', 'ags_fetch_rss_posts');
+    }
+}
+register_activation_hook(__FILE__, 'ags_schedule_rss_cron');
+
+function ags_clear_rss_cron() {
+    $timestamp = wp_next_scheduled('ags_fetch_rss_posts');
+    wp_unschedule_event($timestamp, 'ags_fetch_rss_posts');
+}
+register_deactivation_hook(__FILE__, 'ags_clear_rss_cron');
+
+function ags_fetch_rss_posts() {
+    $feeds = [
+        'https://theghostinmymachine.com/feed/',
+        'https://feeds.feedburner.com/ParanormalGlobe',
+        'https://www.yourghoststories.com/rss.php',
+        'https://www.realghoststoriesonline.com/feed/',
+        'https://www.thegravetalks.com/feed/',
+        'https://www.hauntedrooms.com/feed'
+        // Add more RSS feed URLs here
+    ];
+
+    $max_posts = get_option('ags_max_posts', 10); // Default to 10 if not set
+    $post_status = get_option('ags_post_status', 'draft'); // Default to draft
+    $post_count = 0;
+
+    foreach ($feeds as $feed_url) {
+        $rss = fetch_feed($feed_url);
+
+        if (!is_wp_error($rss)) {
+            $max_items = $rss->get_item_quantity(5);
+            $rss_items = $rss->get_items(0, $max_items);
+
+            foreach ($rss_items as $item) {
+                if ($post_count >= $max_posts) break;
+
+                $title = $item->get_title();
+                $content = $item->get_content();
+                $link = $item->get_permalink();
+
+                if (!post_exists($title)) {
+                    wp_insert_post([
+                        'post_title'   => $title,
+                        'post_content' => $content . "\n\nSource: " . $link,
+                        'post_status'  => $post_status,
+                        'post_author'  => 1,
+                        'post_category' => [get_cat_ID('Ghost Stories')],
+                    ]);
+                    $post_count++;
+                }
+            }
+        }
+    }
+}
+add_action('ags_fetch_rss_posts', 'ags_fetch_rss_posts');
+
+function ags_log($message) {
+    $file = plugin_dir_path(__FILE__) . 'ags_log.txt';
+    file_put_contents($file, date("Y-m-d H:i:s") . " - " . $message . "\n", FILE_APPEND);
+}
+
+// Admin Settings Page
+function ags_register_settings() {
+    add_option('ags_max_posts', 10);
+    add_option('ags_post_status', 'draft');
+    register_setting('ags_options_group', 'ags_max_posts', 'intval');
+    register_setting('ags_options_group', 'ags_post_status', 'sanitize_text_field');
+}
+add_action('admin_init', 'ags_register_settings');
+
+function ags_register_options_page() {
+    add_options_page('RSS Aggregator Settings', 'RSS Aggregator', 'manage_options', 'ags-options', 'ags_options_page');
+}
+add_action('admin_menu', 'ags_register_options_page');
+
+function ags_options_page() {
+    ?>
+    <div>
+        <h2>RSS Aggregator Settings</h2>
+        <form method="post" action="options.php">
+            <?php settings_fields('ags_options_group'); ?>
+            <table>
+                <tr valign="top">
+                    <th scope="row"><label for="ags_max_posts">Max Posts to Fetch</label></th>
+                    <td><input type="number" id="ags_max_posts" name="ags_max_posts" value="<?php echo get_option('ags_max_posts'); ?>" /></td>
+                </tr>
+                <tr valign="top">
+                    <th scope="row"><label for="ags_post_status">Post Status</label></th>
+                    <td>
+                        <select id="ags_post_status" name="ags_post_status">
+                            <option value="publish" <?php selected(get_option('ags_post_status'), 'publish'); ?>>Publish</option>
+                            <option value="draft" <?php selected(get_option('ags_post_status'), 'draft'); ?>>Draft</option>
+                        </select>
+                    </td>
+                </tr>
+            </table>
+            <?php submit_button(); ?>
+        </form>
+    </div>
+    <?php
+}
+
