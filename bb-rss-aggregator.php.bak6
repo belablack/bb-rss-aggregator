@@ -11,15 +11,15 @@ License URI: https://www.gnu.org/licenses/gpl-2.0.html
 function ags_custom_rss_cron_schedule($schedules) {
     $schedules['every_6_hours'] = [
         'interval' => 21600,
-        'display'  => __('Every 6 Hours', 'bb-rss-aggregator')
+        'display'  => __('Every 6 Hours')
     ];
     $schedules['every_12_hours'] = [
         'interval' => 43200,
-        'display'  => __('Every 12 Hours', 'bb-rss-aggregator')
+        'display'  => __('Every 12 Hours')
     ];
     $schedules['daily'] = [
         'interval' => 86400,
-        'display'  => __('Daily', 'bb-rss-aggregator')
+        'display'  => __('Daily')
     ];
     return $schedules;
 }
@@ -94,14 +94,8 @@ function ags_fetch_rss_posts() {
 add_action('ags_fetch_rss_posts', 'ags_fetch_rss_posts');
 
 function ags_log($message) {
-    global $wp_filesystem;
-    if (!function_exists('WP_Filesystem')) {
-        require_once ABSPATH . 'wp-admin/includes/file.php';
-    }
-    WP_Filesystem();
-
     $file = plugin_dir_path(__FILE__) . 'ags_log.txt';
-    $wp_filesystem->put_contents($file, gmdate("Y-m-d H:i:s") . " - " . $message . "\n", FS_CHMOD_FILE);
+    file_put_contents($file, date("Y-m-d H:i:s") . " - " . $message . "\n", FILE_APPEND);
 }
 
 // Admin Settings Page
@@ -136,7 +130,7 @@ function ags_options_page() {
             <table>
                 <tr valign="top">
                     <th scope="row"><label for="ags_max_posts">Max Posts to Fetch</label></th>
-                    <td><input type="number" id="ags_max_posts" name="ags_max_posts" value="<?php echo esc_attr(get_option('ags_max_posts')); ?>" /></td>
+                    <td><input type="number" id="ags_max_posts" name="ags_max_posts" value="<?php echo get_option('ags_max_posts'); ?>" /></td>
                 </tr>
                 <tr valign="top">
                     <th scope="row"><label for="ags_post_status">Post Status</label></th>
